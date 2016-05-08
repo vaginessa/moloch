@@ -23,7 +23,7 @@
   - capture - fix memory leak in ES writing
   - viewer - Total/Average stats are of filtered data
   - capture - use getdomainname to try and form FQDN
-  - easybutton - node 0.10.45, ES 2.3.2
+  - easybutton - node 0.10.45
 
 0.12.3 2016/03/28
   - NOTICE: Only ES 1.7.x and ES 2.x is supported by this version. 
