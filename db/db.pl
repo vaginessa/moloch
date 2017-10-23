@@ -43,6 +43,7 @@
 # 34 - stats_v2
 # 35 - user spiviewFieldConfigs
 # 36 - user action history
+# 37 - add request body to history
 
 use HTTP::Request::Common;
 use LWP::UserAgent;
@@ -51,7 +52,7 @@ use Data::Dumper;
 use POSIX;
 use strict;
 
-my $VERSION = 36;
+my $VERSION = 37;
 my $verbose = 0;
 my $PREFIX = "";
 my $NOCHANGES = 0;
@@ -1720,6 +1721,10 @@ sub historyUpdate
       },
       "recordsTotal": {
         "type": "long"
+      },
+      "body": {
+        "type": "object",
+        "dynamic": "true"
       }
     }
   }
@@ -1727,7 +1732,7 @@ sub historyUpdate
 
  my $template = '
 {
-  "template": "' . $PREFIX . 'history_v1-*",
+  "template": "' . $PREFIX . 'history_v2-*",
   "settings": {
       "number_of_shards": 2,
       "number_of_replicas": 0,
@@ -1737,9 +1742,9 @@ sub historyUpdate
 }';
 
 print "Creating history template\n" if ($verbose > 0);
-esPut("/_template/${PREFIX}history_v1_template", $template);
+esPut("/_template/${PREFIX}history_v2_template", $template);
 
-my $indices = esGet("/${PREFIX}history_v1-*/_aliases", 1);
+my $indices = esGet("/${PREFIX}history_v2-*/_aliases", 1);
 
 print "Updating history mapping for ", scalar(keys %{$indices}), " indices\n" if (scalar(keys %{$indices}) != 0);
 foreach my $i (keys %{$indices}) {
@@ -2189,9 +2194,9 @@ if ($ARGV[1] =~ /^users-?import$/) {
     }
 
     # Now figure out history expire
-    my $hindices = esGet("/${PREFIX}history_v1-*/_aliases", 1);
+    my $hindices = esGet("/${PREFIX}history_v2-*/_aliases", 1);
 
-    $endTimeIndex = time2index("weekly", "history_v1-", $endTime);
+    $endTimeIndex = time2index("weekly", "history_v2-", $endTime);
     delete $hindices->{$endTimeIndex};
 
     @startTime = gmtime;
@@ -2200,7 +2205,7 @@ if ($ARGV[1] =~ /^users-?import$/) {
     $optimizecnt = 0;
     $startTime = mktime(@startTime);
     while ($startTime <= $endTime) {
-        my $iname = time2index("weekly", "history_v1-", $startTime);
+        my $iname = time2index("weekly", "history_v2-", $startTime);
         if (exists $hindices->{$iname} && $hindices->{$iname}->{OPTIMIZEIT} != 1) {
             $hindices->{$iname}->{OPTIMIZEIT} = 1;
             $optimizecnt++;
@@ -2249,9 +2254,9 @@ if ($ARGV[1] =~ /^users-?import$/) {
 
     my $historys = 0;
     my $historysBytes = 0;
-    my @historys = grep /^${PREFIX}history_v1-/, keys %{$status->{indices}};
+    my @historys = grep /^${PREFIX}history_v2-/, keys %{$status->{indices}};
     foreach my $index (@historys) {
-        next if ($index !~ /^${PREFIX}history_v1-/);
+        next if ($index !~ /^${PREFIX}history_v2-/);
         $historys += $status->{indices}->{$index}->{primaries}->{docs}->{count};
         $historysBytes += $status->{indices}->{$index}->{primaries}->{store}->{size_in_bytes};
     }
@@ -2501,6 +2506,7 @@ if ($ARGV[1] =~ /(init|wipe)/) {
     esDelete("/${PREFIX}fields", 1);
     esDelete("/${PREFIX}fields_v1", 1);
     esDelete("/${PREFIX}history_v1-*", 1);
+    esDelete("/${PREFIX}history_v2-*", 1);
     if ($ARGV[1] =~ "init") {
         esDelete("/${PREFIX}users_v3", 1);
         esDelete("/${PREFIX}users_v4", 1);
@@ -2586,7 +2592,7 @@ if ($ARGV[1] =~ /(init|wipe)/) {
         historyUpdate();
         sessionsUpdate();
         checkForOldIndices();
-    } elsif ($main::versionNumber <= 36) {
+    } elsif ($main::versionNumber <= 37) {
         usersUpdate();
         historyUpdate();
         sessionsUpdate();
