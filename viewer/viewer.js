@@ -733,11 +733,11 @@ function logAction(uiPage) {
     }
 
     // save the request body
-    var avoidProps  = ['password','newPassword','currentPassword'];
+    var avoidProps  = { password:true, newPassword:true, currentPassword:true };
     var bodyClone   = {};
 
     for (var key in req.body) {
-      if (req.body.hasOwnProperty(key) && avoidProps.indexOf(key) === -1) {
+      if (req.body.hasOwnProperty(key) && !avoidProps[key]) {
         bodyClone[key] = req.body[key];
       }
     }
