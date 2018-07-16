@@ -149,21 +149,31 @@ let timeout;
 
 app.disable('x-powered-by');
 
-// parliament app pages
-app.use('/parliament', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
-app.use('/parliament/issues', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
-app.use('/parliament/settings', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
+// TODO
+// vue index page
+app.use(['/parliament','/parliament/'], express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
+// expose vue bundles (prod)
+app.use('/static', express.static(`${__dirname}/vueapp/dist/static`));
+// expose vue bundle (dev)
+app.use(['/app.js', '/vueapp/app.js'], express.static(`${__dirname}/vueapp/dist/app.js`));
+// TODO
+app.use('/parliament/font-awesome', express.static(__dirname + '/../node_modules/font-awesome', { maxAge: 600 * 1000}));
+
+// TODO parliament app pages
+app.use('/angularparliament', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
+app.use('/angularparliament/issues', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
+app.use('/angularparliament/settings', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
 
 // log requests
 app.use(logger('dev'));
 
-app.use(favicon(`${__dirname}/public/favicon.ico`));
+app.use(favicon(`${__dirname}/favicon.ico`));
 
-// serve public files
-app.use('/parliament/public', express.static(`${__dirname}/public`, { maxAge:600*1000 }));
+// TODO serve public files
+app.use('/angularparliament/public', express.static(`${__dirname}/public`, { maxAge:600*1000 }));
 
-// serve app bundles
-app.use('/parliament', express.static(path.join(__dirname, 'dist')));
+// TODO serve app bundles
+app.use('/angularparliament', express.static(path.join(__dirname, 'dist')));
 
 // define router to mount api related functions
 app.use('/parliament/api', router);
