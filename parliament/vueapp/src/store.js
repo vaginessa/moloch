@@ -6,7 +6,8 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
   state: {
     hasAuth: false,
-    loggedIn: false
+    loggedIn: false,
+    refreshInterval: 15000
   },
   mutations: {
     setLoggedIn (state, value) {
@@ -14,6 +15,11 @@ const store = new Vuex.Store({
     },
     setHasAuth (state, value) {
       state.hasAuth = value;
+    },
+    setRefreshInterval (state, value) {
+      value = parseInt(value) || 0;
+      localStorage.setItem('refreshInterval', value);
+      state.refreshInterval = value;
     }
   }
 });

@@ -3,13 +3,17 @@ import store from '@/store';
 
 export default {
   login: function (password) {
-    Vue.axios.post('api/auth', { password: password })
-      .then((response) => {
-        this.saveToken(response.data.token);
-      })
-      .catch((error) => {
-        this.saveToken('');
-      });
+    return new Promise((resolve, reject) => {
+      Vue.axios.post('api/auth', { password: password })
+        .then((response) => {
+          this.saveToken(response.data.token);
+          resolve(response.data);
+        })
+        .catch((error) => {
+          this.saveToken('');
+          reject(error.response.data);
+        });
+    });
   },
 
   logout: function () {
@@ -53,11 +57,11 @@ export default {
       })
         .then((response) => {
           this.saveToken(response.data.token);
-          resolve(response);
+          resolve(response.data);
         })
         .catch((error) => {
           this.saveToken('');
-          reject(error);
+          reject(error.response.data);
         });
     });
   }

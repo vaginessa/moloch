@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import Parliamnet from '@/components/Parliamnet';
+import Parliamnet from '@/components/Parliament';
 
 Vue.use(Router);
 

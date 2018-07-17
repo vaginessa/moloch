@@ -23,10 +23,72 @@ export default {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.cursor-pointer, .pointer-cursor {
-  cursor: pointer;
+html, body { background-color: #F0F0F0; }
+
+body {
+  --px-none   : 0;          /* 0px */
+  --px-xs     : 0.125rem;   /* 2px */
+  --px-sm     : .25rem;     /* 4px */
+  --px-md     : .5rem;      /* 8px */
+  --px-lg     : .75rem;     /* 12px */
+  --px-xlg    : 1rem;       /* 16px */
+  --px-xxlg   : 1.5rem;     /* 24px */
+  --px-xxxlg  : 2rem;       /* 32px */
+  --px-xxxxlg : 3rem;       /* 48px */
+  --px-xxxxxlg: 3.5rem;     /* 56px */
 }
-.cursor-help, .help-cursor {
-  cursor: help;
+
+a.no-href { color: #007bff !important; }
+a.no-href:hover { color: #0056b3 !important; }
+
+.no-decoration { text-decoration: none !important; }
+
+.text-muted-more { color: #DDDDDD; }
+
+/* cursors ----------------------------------- */
+.cursor-help, .help-cursor { cursor: help; }
+.cursor-text, .text-cursor { cursor: text; }
+.cursor-pointer, .pointer-cursor { cursor: pointer; }
+.cursor-move, .move-cursor { cursor: move; }
+
+/* info display ------------------------------ */
+/* displays large text for important information
+ * note: must contain an inner div with the text
+ * example:
+ * <div class="info-area">
+ *   <div>Some important text!</div>
+ * </div>
+ */
+.info-area {
+  font-size: 1.5rem;
+  color: #777777;
+}
+
+.info-area div {
+  padding: 2rem;
+  border-radius: .25rem;
+  background-color: #FFFFFF;
+}
+
+.info-area span.fa {
+  display: flex;
+  justify-content: center;
+}
+
+.vertical-center {
+  min-height: 30vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* media queries ----------------------------- */
+@media (min-width: 1600px) {
+  .col-xxl-2 {
+    -ms-flex: 0 0 16.666667%;
+    flex: 0 0 16.666667%;
+    max-width: 16.666667%;
+  }
 }
 </style>

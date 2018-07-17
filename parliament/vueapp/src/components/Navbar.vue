@@ -1,6 +1,8 @@
 <template>
 
   <div>
+
+    <!-- parliament navbar -->
     <nav class="navbar navbar-expand navbar-dark bg-dark justify-content-between">
       <a class="navbar-brand">
         <img src="../assets/header_logo.png"
@@ -31,7 +33,8 @@
           </router-link>
         </li>
       </ul> <!-- /page links -->
-      <form class="form-inline">
+      <div class="form-inline"
+        @keyup.enter="login">
         <!-- refresh interval select -->
         <span class="form-group"
           v-if="!showLoginInput">
@@ -46,9 +49,8 @@
             </span>
             <select class="form-control refresh-interval-control"
               tabindex="1"
-              v-model="refreshInterval"
-              @change="changeRefreshInterval">
-              <option value="">Never</option>
+              v-model="refreshInterval">
+              <option value="0">Never</option>
               <option value="15000">15 seconds</option>
               <option value="30000">30 seconds</option>
               <option value="45000">45 seconds</option>
@@ -58,53 +60,71 @@
           </div>
         </span> <!-- /refresh interval select -->
         <!-- password input -->
-        <!-- TODO [appAutofocus]="focusOnPasswordInput" -->
         <input class="form-control ml-1"
           tabindex="2"
           type="password"
           v-model="password"
-          @keyup.enter="login"
+          v-focus-input="focusPassInput"
           placeholder="password please"
           :class="{'hide-login':!showLoginInput,'show-login':showLoginInput}"
         /> <!-- /password input -->
         <!-- login button -->
-        <a class="btn btn-outline-success cursor-pointer ml-1"
+        <button type="button"
+          class="btn btn-outline-success cursor-pointer ml-1"
           @click="login"
           tabindex="3"
           v-if="!loggedIn && hasAuth">
           <span class="fa fa-unlock">
           </span>&nbsp;
           Login
-        </a> <!-- /login button -->
-        <!-- logged in -->
-        <a class="btn btn-outline-danger cursor-pointer ml-1"
+        </button> <!-- /login button -->
+        <!-- logout btn -->
+        <button type="button"
+          class="btn btn-outline-danger cursor-pointer ml-1"
           @click="logout"
           tabindex="4"
-          v-else>
+          v-if="loggedIn">
           <span class="fa fa-lock">
           </span>&nbsp;
           Logout
-        </a> <!-- /logged in -->
-      </form>
-    </nav>
+        </button> <!-- /logout btn -->
+      </div>
+    </nav> <!-- /parliament nav -->
+
+    <!-- login error -->
+    <div class="container-fluid mt-3">
+      <div v-if="error"
+        class="alert alert-danger">
+        <span class="fa fa-exclamation-triangle">
+        </span>&nbsp;
+        {{ error }}
+        <button type="button"
+          class="close cursor-pointer"
+          @click="error = ''">
+          <span>&times;</span>
+        </button>
+      </div>
+    </div> <!-- /login error -->
+
   </div>
 
 </template>
 
 <script>
 import AuthService from '@/auth';
+import { focusInput } from '@/components/utils';
 
 export default {
   name: 'ParliamentNavbar',
+  directives: { focusInput },
   data: function () {
     return {
-      // page errors
+      // login error
       error: '',
-      // data refresh interval default
-      refreshInterval: 15000,
       // password input vars
       password: '',
-      showLoginInput: false
+      showLoginInput: false,
+      focusPassInput: false
     };
   },
   computed: {
@@ -114,6 +134,15 @@ export default {
     },
     loggedIn: function () {
       return this.$store.state.loggedIn;
+    },
+    // data load interval
+    refreshInterval: {
+      get: function () {
+        return this.$store.state.refreshInterval;
+      },
+      set: function (newValue) {
+        this.$store.commit('setRefreshInterval', newValue);
+      }
     }
   },
   mounted: function () {
@@ -121,13 +150,32 @@ export default {
     AuthService.isLoggedIn();
   },
   methods: {
-    changeRefreshInterval: function () {
-      // TODO
-      console.log('change refresh interval');
-    },
+    /* page functions -------------------------------------------------------- */
     login: function () {
-      this.password = '';
-      AuthService.login(this.password);
+      if (this.showLoginInput) {
+        this.focusPassInput = false;
+
+        if (!this.password) {
+          this.error = 'Must provide a password to login.';
+          setTimeout(() => { this.focusPassInput = true; });
+          return;
+        }
+
+        AuthService.login(this.password)
+          .then((response) => {
+            this.error = '';
+            this.password = '';
+            this.showLoginInput = false;
+          })
+          .catch((error) => {
+            this.password = '';
+            this.focusPassInput = true;
+            this.error = error.text || 'Unable to login';
+          });
+      } else {
+        this.showLoginInput = true;
+        this.focusPassInput = true;
+      }
     },
     logout: function () {
       AuthService.logout();
@@ -146,5 +194,19 @@ nav.navbar > .navbar-brand > img {
 /* remove browser select box styling */
 .refresh-interval-control {
   -webkit-appearance: none;
+}
+
+/* animations -------------------------------- */
+.hide-login, .show-login, .show-cancel-btn, .hide-cancel-btn {
+  transition: width 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940),
+              opacity 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940);
+}
+.show-login {
+  width: 200px;
+}
+.hide-login {
+  width: 0px;
+  opacity: 0;
+  padding: 0;
 }
 </style>

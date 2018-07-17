@@ -19,6 +19,7 @@ Vue.use(VueAxios, axios);
 
 Vue.directive('b-tooltip', vBTooltip);
 
+// setup axios http interceptor to add token to reqs
 interceptorSetup();
 
 /* eslint-disable no-new */
