@@ -34,7 +34,8 @@
         </li>
       </ul> <!-- /page links -->
       <div class="form-inline"
-        @keyup.enter="login">
+        @keyup.enter="login"
+        @keyup.esc="clearLogin">
         <!-- refresh interval select -->
         <span class="form-group"
           v-if="!showLoginInput">
@@ -179,6 +180,10 @@ export default {
     },
     logout: function () {
       AuthService.logout();
+    },
+    clearLogin: function () {
+      this.password = '';
+      this.showLoginInput = false;
     }
   }
 };

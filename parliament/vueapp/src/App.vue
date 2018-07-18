@@ -17,6 +17,7 @@ export default {
 </script>
 
 <style>
+/* app styles -------------------------------- */
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -44,6 +45,27 @@ a.no-href:hover { color: #0056b3 !important; }
 .no-decoration { text-decoration: none !important; }
 
 .text-muted-more { color: #DDDDDD; }
+
+/* small, condensed styles ------------------- */
+.alert.alert-sm  {
+  font-size: .85rem;
+  padding: .25rem .4rem;
+  margin-bottom: .5rem;
+}
+.alert.alert-sm > .close {
+  line-height: .75;
+}
+
+.btn-xs {
+  padding: .1rem .2rem;
+  font-size: .9rem;
+  border-radius: .2rem;
+}
+.dropdown-btn-xs > button.dropdown-toggle {
+  padding: .1rem .2rem;
+  font-size: .9rem;
+  border-radius: .2rem;
+}
 
 /* cursors ----------------------------------- */
 .cursor-help, .help-cursor { cursor: help; }

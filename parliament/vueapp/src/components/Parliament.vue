@@ -160,7 +160,7 @@
                 Save
               </a>
               <a v-if="group.showNewClusterForm || group.showEditGroupForm"
-                @click="group.showNewClusterForm = false; group.showEditGroupForm = false;"
+                @click="cancelUpdateGroup(group)"
                 class="btn btn-sm btn-outline-warning cursor-pointer pull-right mr-1 mb-1">
                 <span class="fa fa-ban">
                 </span>&nbsp;
@@ -184,7 +184,7 @@
               </span>
             </a>
           </h5>
-          <p class="lead mb-2" style="font-size:1rem;">
+          <p class="mb-2">
             {{ group.description }}
           </p>
           <div v-if="group.error"
@@ -332,17 +332,178 @@
       <!-- clusters -->
       <ul v-if="group.filteredClusters.length"
         class="cluster-group d-flex flex-wrap row mb-4">
-
+        <li v-for="cluster in group.filteredClusters"
+          :key="cluster.id"
+          class="cluster col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3 col-xxl-2 mb-1">
+          <div class="card bg-light">
+            <div class="card-body">
+              <!-- cluster title -->
+              <span v-if="!cluster.disabled"
+                class="badge badge-pill badge-secondary cursor-help pull-right"
+                :class="{'badge-success':cluster.status === 'green','badge-warning':cluster.status === 'yellow','badge-danger':cluster.status === 'red'}"
+                v-b-tooltip.hover.top
+                :title="`Moloch ES Status ${cluster.healthError}`">
+                <span v-if="cluster.status">
+                  {{ cluster.status }}
+                </span>
+                <span v-if="cluster.healthError"
+                  class="fa fa-exclamation-triangle">
+                </span>
+                <span v-if="!cluster.status && !cluster.healthError">
+                  ????
+                </span>
+              </span>
+              <h6>
+                <span v-if="cluster.multiviewer"
+                  class="fa fa-sitemap text-muted cursor-help"
+                  v-b-tooltip.hover.top
+                  title="Mutiviewer cluster">
+                </span>
+                <span v-if="cluster.disabled"
+                  class="text-muted fa fa-eye-slash cursor-help"
+                  v-b-tooltip.hover.top
+                  title="Disabled cluster">
+                </span>
+                <a v-if="!cluster.disabled"
+                  class="no-decoration"
+                  :href="`${cluster.url}/sessions`">
+                  {{ cluster.title }}
+                </a>
+                <span v-else>
+                  {{ cluster.title }}
+                </span>
+                <a :href="`${cluster.url}/stats?statsTab=0`"
+                  class="no-decoration ml-2"
+                  v-b-tooltip.hover.top
+                  title="Go to the Stats page of this cluster">
+                  <span class="fa fa-bar-chart">
+                  </span>
+                </a>
+              </h6> <!-- /cluster title -->
+              <hr>
+              <!-- cluster description -->
+              <p class="text-muted small mb-2">
+                {{ cluster.description }}
+              </p> <!-- /cluster description -->
+              <!-- cluster error -->
+              <div v-if="cluster.error"
+                class="alert alert-danger alert-sm">
+                <button type="button"
+                  class="close cursor-pointer"
+                  @click="cluster.error = false">
+                  <span>&times;</span>
+                </button>
+                <span class="fa fa-exclamation-triangle">
+                </span>&nbsp;
+                {{ cluster.error }}
+              </div> <!-- /cluster error -->
+              <!-- cluster stats -->
+              <small v-if="(!cluster.statsError && !cluster.showEditClusterForm && !cluster.disabled && !cluster.multiviewer) || (cluster.showEditClusterForm && !cluster.newDisabled && !cluster.newMultiviewer)">
+                <div class="row">
+                  <div v-if="cluster.showEditClusterForm || !cluster.hideDeltaBPS"
+                    class="col-6">
+                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
+                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                        type="checkbox"
+                        :checked="!cluster.hideDeltaBPS"
+                        @change="cluster.hideDeltaBPS = !cluster.hideDeltaBPS"
+                      />
+                      <strong class="d-inline-block">
+                        {{ cluster.deltaBPS | commaString }}
+                      </strong>
+                      <small class="d-inline-block">
+                        Bytes/Sec
+                      </small>
+                    </label>
+                  </div>
+                  <div v-if="cluster.showEditClusterForm || !cluster.hideDeltaTDPS"
+                    class="col-6">
+                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
+                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                        type="checkbox"
+                        :checked="!cluster.hideDeltaTDPS"
+                        @change="cluster.hideDeltaTDPS = !cluster.hideDeltaTDPS"
+                      />
+                      <strong class="d-inline-block">
+                        {{ cluster.deltaTDPS | commaString }}
+                      </strong>
+                      <small class="d-inline-block">
+                        Packet Drops/Sec
+                      </small>
+                    </label>
+                  </div>
+                  <div v-if="cluster.showEditClusterForm || !cluster.hideDataNodes"
+                    class="col-6">
+                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
+                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                        type="checkbox"
+                        :checked="!cluster.hideDataNodes"
+                        @change="cluster.hideDataNodes = !cluster.hideDataNodes"
+                      />
+                      <strong class="d-inline-block">
+                        {{ cluster.dataNodes | commaString }}
+                      </strong>
+                      <small class="d-inline-block">
+                        Data Nodes
+                      </small>
+                    </label>
+                  </div>
+                  <div v-if="cluster.showEditClusterForm || !cluster.hideTotalNodes"
+                    class="col-6">
+                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
+                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                        type="checkbox"
+                        :checked="!cluster.hideTotalNodes"
+                        @change="cluster.hideTotalNodes = !cluster.hideTotalNodes"
+                      />
+                      <strong class="d-inline-block">
+                        {{ cluster.totalNodes | commaString }}
+                      </strong>
+                      <small class="d-inline-block">
+                        Total Nodes
+                      </small>
+                    </label>
+                  </div>
+                </div>
+              </small> <!-- /cluster stats -->
+              <!-- cluster issues -->
+              <small v-if="cluster.issues">
+                <span v-for="(issue, index) in cluster.issues"
+                  :key="getIssueTrackingId(issue, index)">
+                  <div v-if="!issue.dismissed && !issue.ignoreUntil"
+                    class="alert alert-sm"
+                    :class="{'alert-warning':issue.severity==='yellow','alert-danger':issue.severity==='red'}">
+                    <issue-actions v-if="loggedIn"
+                      class="issue-btns"
+                      :issue="issue"
+                      :groupId="group.id"
+                      :clusterId="cluster.id"
+                      @issueChange="issueChange">
+                    </issue-actions>
+                    {{ issue.message }}
+                    <br>
+                    <small class="cursor-help issue-date"
+                      v-b-tooltip.hover.top-left.html="issueDateTooltip(issue)">
+                      {{ issue.lastNoticed | moment('MM/DD HH:mm:ss') }}
+                    </small>
+                  </div>
+                </span>
+              </small> <!-- /cluster issues -->
+            </div>
+          </div>
+        </li>
       </ul> <!-- /clusters -->
 
       <!-- no clusters -->
       <div v-if="!group.clusters.length && !searchTerm && !group.showNewClusterForm">
-        No clusters in this group.
-        <a @click="group.showNewClusterForm = true"
-          v-if="loggedIn"
-          class="no-decoration cursor-pointer no-href">
-          Create one
-        </a>
+        <strong>
+          No clusters in this group.
+          <a @click="group.showNewClusterForm = true"
+            v-if="loggedIn"
+            class="no-decoration cursor-pointer no-href">
+            Create one
+          </a>
+        </strong>
       </div> <!-- no clusters -->
 
     </div> <!-- /groups -->
@@ -353,12 +514,16 @@
 
 <script>
 import ParliamentService from './parliament.service';
+import IssueActions from './IssueActions';
 
 let timeout;
 let interval;
 
 export default {
   name: 'Parliament',
+  components: {
+    IssueActions
+  },
   data: function () {
     return {
       // page error(s)
@@ -489,7 +654,6 @@ export default {
         });
     },
     createNewCluster: function (group) {
-      // TODO test
       group.error = '';
 
       if (!group.newClusterTitle) {
@@ -513,14 +677,59 @@ export default {
       ParliamentService.createCluster(group.id, newCluster)
         .then((data) => {
           group.error = '';
-          group.showNewClusterForm = false;
           group.clusters.push(data.cluster);
+          this.cancelUpdateGroup(group);
           this.updateParliament(data.parliament);
           this.filterClusters();
         })
         .catch((error) => {
           group.error = error.text || 'Unable to add a cluster to this group';
         });
+    },
+    cancelUpdateGroup: function (group) {
+      group.showEditGroupForm = false;
+      group.showNewClusterForm = false;
+      group.newClusterTitle = '';
+      group.newClusterDescription = '';
+      group.newClusterUrl = '';
+      group.newClusterLocalUrl = '';
+      group.newClusterMultiviewer = false;
+      group.newClusterDisabled = false;
+    },
+    getIssueTrackingId: function (issue, index) {
+      if (issue.node) {
+        return `${issue.node.replace(/\s/g, '')}-${issue.type}`;
+      } else {
+        return issue.type;
+      }
+    },
+    issueDateTooltip: function (issue) {
+      let firstNoticed = this.$options.filters.moment(issue.firstNoticed, 'YYYY/MM/DD HH:mm:ss');
+      let lastNoticed = this.$options.filters.moment(issue.lastNoticed, 'YYYY/MM/DD HH:mm:ss');
+      let htmlStr =
+        `<small>
+          <div>
+            <strong>Last</strong>
+            noticed at:
+            <br>
+            <strong>
+              ${lastNoticed}
+            </strong>
+          </div>
+          <div>
+            <strong>First</strong>
+            noticed at:
+            <br>
+            <strong>
+              ${firstNoticed}
+            </strong>
+          </div>
+        </small>`;
+      return htmlStr;
+    },
+    issueChange: function (change) {
+      // TODO
+      console.log('issue changed', change);
     },
     /* helper functions ---------------------------------------------------- */
     loadData: function () {
