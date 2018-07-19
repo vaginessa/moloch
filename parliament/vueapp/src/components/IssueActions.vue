@@ -12,7 +12,8 @@
       </span>
     </button> <!-- /dismiss issue button -->
     <!-- (un)ignore until dropdown -->
-    <b-dropdown size="sm"
+    <b-dropdown right
+      size="sm"
       class="dropdown-btn-xs"
       variant="outline-secondary">
       <template slot="button-content">
@@ -86,7 +87,6 @@ export default {
     /* Sends a request to dismiss an issue
      * If succesful, updates the issue in the view, otherwise displays error */
     dismissIssue: function () {
-      console.log('dismiss issue'); // TODO test
       ParliamentService.dismissIssue(this.groupId, this.clusterId, this.issue)
         .then((data) => {
           this.issue.dismissed = data.dismissed;
@@ -102,7 +102,6 @@ export default {
      * @param {number} forMs - the amount of time (in ms) that the issue should be ignored
      */
     ignoreIssue: function (forMs) {
-      console.log('ignore issue:', forMs); // TODO test
       ParliamentService.ignoreIssue(this.groupId, this.clusterId, this.issue, forMs)
         .then((data) => {
           this.issue.ignoreUntil = data.ignoreUntil;
@@ -115,7 +114,6 @@ export default {
     /* Sends a request to remove an ignore for an issue
      * If succesful, updates the issue in the view, otherwise displays error */
     removeIgnore: function () {
-      console.log('remove ignore'); // TODO test
       ParliamentService.removeIgnoreIssue(this.groupId, this.clusterId, this.issue)
         .then((data) => {
           this.issue.ignoreUntil = undefined;
@@ -129,16 +127,15 @@ export default {
     updateIssue: function (success, message, issue) {
       let emit = {
         success: success,
-        message: message
+        message: message,
+        groupId: this.groupId,
+        clusterId: this.clusterId
       };
 
       if (issue) { emit.issue = issue; }
 
-      this.$emit('changeIssue', emit);
+      this.$emit('issueChange', emit);
     }
   }
 };
 </script>
-
-<style scoped>
-</style>

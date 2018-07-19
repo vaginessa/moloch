@@ -137,36 +137,35 @@
           <h5 class="mb-1">
             <!-- group action buttons -->
             <span v-if="loggedIn">
-              <!-- TODO takes a while to show form -->
-              <a v-if="!group.showNewClusterForm && !group.showEditGroupForm"
-                @click="group.showNewClusterForm = true"
+              <a v-if="groupAddingCluster !== group.id && groupBeingEdited !== group.id"
+                @click="displayNewClusterForm(group)"
                 class="btn btn-sm btn-outline-info pull-right cursor-pointer mb-1">
                 <span class="fa fa-plus-circle">
                 </span>&nbsp;
                 New Cluster
               </a>
-              <a v-if="group.showNewClusterForm"
+              <a v-if="groupAddingCluster === group.id"
                 @click="createNewCluster(group)"
                 class="btn btn-sm btn-outline-success cursor-pointer pull-right mb-1">
                 <span class="fa fa-plus-circle">
                 </span>&nbsp;
                 Create
               </a>
-              <a v-if="group.showEditGroupForm"
+              <a v-if="groupBeingEdited === group.id"
                 @click="editGroup(group)"
                 class="btn btn-sm btn-outline-success pull-right cursor-pointer mr-1 mb-1">
                 <span class="fa fa-save">
                 </span>&nbsp;
                 Save
               </a>
-              <a v-if="group.showNewClusterForm || group.showEditGroupForm"
+              <a v-if="groupAddingCluster === group.id || groupBeingEdited === group.id"
                 @click="cancelUpdateGroup(group)"
                 class="btn btn-sm btn-outline-warning cursor-pointer pull-right mr-1 mb-1">
                 <span class="fa fa-ban">
                 </span>&nbsp;
                 Cancel
               </a>
-              <a v-if="!group.showEditGroupForm && !group.showNewClusterForm"
+              <a v-if="groupBeingEdited !== group.id && groupAddingCluster !== group.id"
                 @click="displayEditGroupForm(group)"
                 class="btn btn-sm btn-outline-warning pull-right cursor-pointer mr-1 mb-1">
                 <span class="fa fa-pencil">
@@ -175,7 +174,7 @@
               </a>
             </span> <!-- /group action buttons -->
             {{ group.title }}&nbsp;
-            <a v-if="!group.showNewClusterForm && group.showEditGroupForm && loggedIn"
+            <a v-if="loggedIn && groupAddingCluster !== group.id && groupBeingEdited === group.id"
               @click="deleteGroup(group)"
               v-b-tooltip.hover.top
               title="Delete Group"
@@ -202,7 +201,7 @@
       </div> <!-- /group title/description -->
 
       <!-- edit group form -->
-      <div v-if="group.showEditGroupForm && loggedIn"
+      <div v-if="loggedIn && groupBeingEdited === group.id"
         class="row">
         <div class="col-md-12">
           <form>
@@ -240,7 +239,7 @@
       </div> <!-- /edit group form -->
 
       <!-- create cluster form -->
-      <div v-if="group.showNewClusterForm && loggedIn">
+      <div v-if="loggedIn && groupAddingCluster === group.id">
         <div class="col-md-12">
           <hr>
           <form @keyup.enter="createCluster">
@@ -398,12 +397,12 @@
                 {{ cluster.error }}
               </div> <!-- /cluster error -->
               <!-- cluster stats -->
-              <small v-if="(!cluster.statsError && !cluster.showEditClusterForm && !cluster.disabled && !cluster.multiviewer) || (cluster.showEditClusterForm && !cluster.newDisabled && !cluster.newMultiviewer)">
+              <small v-if="(!cluster.statsError && cluster.id !== clusterBeingEdited && !cluster.disabled && !cluster.multiviewer) || (cluster.id === clusterBeingEdited && !cluster.newDisabled && !cluster.newMultiviewer)">
                 <div class="row">
-                  <div v-if="cluster.showEditClusterForm || !cluster.hideDeltaBPS"
+                  <div v-if="cluster.id === clusterBeingEdited || !cluster.hideDeltaBPS"
                     class="col-6">
-                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
-                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                    <label :class="{'form-check-label':cluster.id === clusterBeingEdited}">
+                      <input v-if="loggedIn && cluster.id === clusterBeingEdited"
                         type="checkbox"
                         :checked="!cluster.hideDeltaBPS"
                         @change="cluster.hideDeltaBPS = !cluster.hideDeltaBPS"
@@ -416,10 +415,10 @@
                       </small>
                     </label>
                   </div>
-                  <div v-if="cluster.showEditClusterForm || !cluster.hideDeltaTDPS"
+                  <div v-if="cluster.id === clusterBeingEdited || !cluster.hideDeltaTDPS"
                     class="col-6">
-                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
-                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                    <label :class="{'form-check-label':cluster.id === clusterBeingEdited}">
+                      <input v-if="loggedIn && cluster.id === clusterBeingEdited"
                         type="checkbox"
                         :checked="!cluster.hideDeltaTDPS"
                         @change="cluster.hideDeltaTDPS = !cluster.hideDeltaTDPS"
@@ -432,10 +431,10 @@
                       </small>
                     </label>
                   </div>
-                  <div v-if="cluster.showEditClusterForm || !cluster.hideDataNodes"
+                  <div v-if="cluster.id === clusterBeingEdited || !cluster.hideDataNodes"
                     class="col-6">
-                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
-                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                    <label :class="{'form-check-label':cluster.id === clusterBeingEdited}">
+                      <input v-if="loggedIn && cluster.id === clusterBeingEdited"
                         type="checkbox"
                         :checked="!cluster.hideDataNodes"
                         @change="cluster.hideDataNodes = !cluster.hideDataNodes"
@@ -448,10 +447,10 @@
                       </small>
                     </label>
                   </div>
-                  <div v-if="cluster.showEditClusterForm || !cluster.hideTotalNodes"
+                  <div v-if="cluster.id === clusterBeingEdited || !cluster.hideTotalNodes"
                     class="col-6">
-                    <label :class="{'form-check-label':cluster.showEditClusterForm}">
-                      <input v-if="cluster.showEditClusterForm && loggedIn"
+                    <label :class="{'form-check-label':cluster.id === clusterBeingEdited}">
+                      <input v-if="loggedIn && cluster.id === clusterBeingEdited"
                         type="checkbox"
                         :checked="!cluster.hideTotalNodes"
                         @change="cluster.hideTotalNodes = !cluster.hideTotalNodes"
@@ -489,16 +488,129 @@
                   </div>
                 </span>
               </small> <!-- /cluster issues -->
+              <!-- edit cluster form -->
+              <div v-if="loggedIn && cluster.id === clusterBeingEdited"
+                class="small">
+                <hr class="mt-2">
+                <form class="edit-cluster">
+                  <div class="form-group">
+                    <label for="newClusterTitle">
+                      Title<sup class="text-danger">*</sup>
+                    </label>
+                    <input type="text"
+                      v-model="cluster.newTitle"
+                      class="form-control form-control-sm"
+                      id="newClusterTitle"
+                      placeholder="Cluster title"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="newClusterDescription">
+                      Description
+                    </label>
+                    <textarea rows="3"
+                      v-model="cluster.newDescription"
+                      class="form-control form-control-sm"
+                      id="newClusterDescription"
+                      placeholder="Cluster description">
+                    </textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="newClusterUrl">
+                      Url<sup class="text-danger">*</sup>
+                    </label>
+                    <input type="text"
+                      v-model="cluster.newUrl"
+                      class="form-control form-control-sm"
+                      id="newClusterUrl"
+                      placeholder="Cluster url"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="newClusterLocalUrl">
+                      Local Url
+                    </label>
+                    <input type="text"
+                      v-model="cluster.newLocalUrl"
+                      class="form-control form-control-sm"
+                      id="newClusterLocalUrl"
+                      placeholder="Cluster local url"
+                    />
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <label class="form-check-label">
+                      <input type="checkbox"
+                        v-model="cluster.newMultiviewer"
+                        class="form-check-input"
+                        id="newMultiviewer">
+                      Multiviewer
+                    </label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <label class="form-check-label">
+                      <input type="checkbox"
+                        v-model="cluster.newDisabled"
+                        class="form-check-input"
+                        id="newDisabled">
+                      Disabled
+                    </label>
+                  </div>
+                </form>
+              </div> <!-- /edit cluster form -->
             </div>
+            <!-- edit cluster buttons -->
+            <div v-if="loggedIn"
+              class="card-footer small">
+              <span v-show="cluster.id !== clusterBeingEdited">
+                <a @click="dismissAllIssues(group.id, cluster)"
+                  class="btn btn-sm btn-outline-danger pull-right cursor-pointer"
+                  title="Dismiss all isues for this cluster"
+                  v-b-tooltip.hover.left>
+                  <span class="fa fa-check">
+                  </span>
+                </a>
+                <a class="btn btn-sm btn-outline-warning cursor-pointer"
+                  @click="displayEditClusterForm(cluster)"
+                  title="Edit cluster"
+                  v-b-tooltip.hover.right>
+                  <span class="fa fa-pencil">
+                  </span>
+                </a>
+              </span>
+              <span v-show="cluster.id === clusterBeingEdited">
+                <a class="btn btn-sm btn-outline-success pull-right cursor-pointer"
+                  @click="editCluster(group, cluster)"
+                  title="Save cluster"
+                  v-b-tooltip.hover.top>
+                  <span class="fa fa-save">
+                  </span>&nbsp;
+                  Save
+                </a>
+                <a class="btn btn-sm btn-outline-warning pull-right cursor-pointer mr-1"
+                  @click="cancelEditCluster(cluster)"
+                  title="Cancel"
+                  v-b-tooltip.hover>
+                  <span class="fa fa-ban">
+                  </span>
+                </a>
+                <a class="btn btn-sm btn-outline-danger cursor-pointer mr-1"
+                  @click="deleteCluster(group, cluster)"
+                  title="Delete cluster"
+                  v-b-tooltip.hover.top>
+                  <span class="fa fa-trash-o">
+                  </span>
+                </a>
+              </span>
+            </div> <!-- /edit cluster buttons -->
           </div>
         </li>
       </ul> <!-- /clusters -->
 
       <!-- no clusters -->
-      <div v-if="!group.clusters.length && !searchTerm && !group.showNewClusterForm">
+      <div v-if="!group.clusters.length && !searchTerm && groupAddingCluster !== group.id">
         <strong>
           No clusters in this group.
-          <a @click="group.showNewClusterForm = true"
+          <a @click="displayNewClusterForm(group)"
             v-if="loggedIn"
             class="no-decoration cursor-pointer no-href">
             Create one
@@ -530,7 +642,10 @@ export default {
       error: '',
       initialized: false,
       // page data
-      parliament: {},
+      parliament: { },
+      groupBeingEdited: undefined,
+      groupAddingCluster: undefined,
+      clusterBeingEdited: undefined,
       // old parliament order to undo reordering
       oldParliamentOrder: {},
       // search vars
@@ -605,8 +720,7 @@ export default {
         });
     },
     displayEditGroupForm: function (group) {
-      // TODO sometimes takes a sec to see the form
-      group.showEditGroupForm = true;
+      this.groupBeingEdited = group.id;
       group.newTitle = group.title;
       group.newDescription = group.description;
     },
@@ -629,7 +743,7 @@ export default {
           group.error = '';
           group.title = group.newTitle;
           group.description = group.newDescription;
-          group.showEditGroupForm = false;
+          this.groupBeingEdited = undefined;
         })
         .catch((error) => {
           group.error = error.text || 'Unable to udpate this group';
@@ -652,6 +766,19 @@ export default {
         .catch((error) => {
           group.error = error.text || 'Unable to delete this group';
         });
+    },
+    cancelUpdateGroup: function (group) {
+      this.groupBeingEdited = undefined;
+      this.groupAddingCluster = undefined;
+      group.newClusterTitle = '';
+      group.newClusterDescription = '';
+      group.newClusterUrl = '';
+      group.newClusterLocalUrl = '';
+      group.newClusterMultiviewer = false;
+      group.newClusterDisabled = false;
+    },
+    displayNewClusterForm: function (group) {
+      this.groupAddingCluster = group.id;
     },
     createNewCluster: function (group) {
       group.error = '';
@@ -686,15 +813,90 @@ export default {
           group.error = error.text || 'Unable to add a cluster to this group';
         });
     },
-    cancelUpdateGroup: function (group) {
-      group.showEditGroupForm = false;
-      group.showNewClusterForm = false;
-      group.newClusterTitle = '';
-      group.newClusterDescription = '';
-      group.newClusterUrl = '';
-      group.newClusterLocalUrl = '';
-      group.newClusterMultiviewer = false;
-      group.newClusterDisabled = false;
+    displayEditClusterForm: function (cluster) {
+      this.clusterBeingEdited = cluster.id;
+      cluster.newTitle = cluster.title;
+      cluster.newDescription = cluster.description;
+      cluster.newUrl = cluster.url;
+      cluster.newLocalUrl = cluster.localUrl;
+      cluster.newMultiviewer = cluster.multiviewer;
+      cluster.newDisabled = cluster.disabled;
+    },
+    cancelEditCluster: function (cluster) {
+      this.clusterBeingEdited = undefined;
+    },
+    editCluster: function (group, cluster) {
+      cluster.error = '';
+
+      if (!cluster.newTitle) {
+        cluster.error = 'A cluster must have a title';
+        return;
+      }
+      if (!cluster.newUrl) {
+        cluster.error = 'A cluster must have a url';
+        return;
+      }
+
+      const updatedCluster = {
+        title: cluster.newTitle,
+        description: cluster.newDescription,
+        url: cluster.newUrl,
+        localUrl: cluster.newLocalUrl,
+        multiviewer: cluster.newMultiviewer,
+        disabled: cluster.newDisabled,
+        hideDeltaBPS: cluster.hideDeltaBPS,
+        hideDataNodes: cluster.hideDataNodes,
+        hideDeltaTDPS: cluster.hideDeltaTDPS,
+        hideTotalNodes: cluster.hideTotalNodes
+      };
+
+      ParliamentService.editCluster(group.id, cluster.id, updatedCluster)
+        .then((data) => {
+          cluster.error = '';
+          cluster.title = cluster.newTitle;
+          cluster.description = cluster.newDescription;
+          cluster.url = cluster.newUrl;
+          cluster.localUrl = cluster.newLocalUrl;
+          cluster.multiviewer = cluster.newMultiviewer;
+          cluster.disabled = cluster.newDisabled;
+          this.cancelEditCluster();
+        })
+        .catch((error) => {
+          cluster.error = error.text || 'Unable to update this cluster';
+        });
+    },
+    deleteCluster: function (group, cluster) {
+      group.error = '';
+
+      ParliamentService.deleteCluster(group.id, cluster.id)
+        .then((data) => {
+          group.error = '';
+          let index = 0;
+          for (const c of group.clusters) {
+            if (c.id === cluster.id) {
+              group.clusters.splice(index, 1);
+              break;
+            }
+            ++index;
+          }
+          this.filterClusters();
+        })
+        .catch((error) => {
+          group.error = error.text || 'Unable to remove cluster from this group';
+        });
+    },
+    dismissAllIssues: function (groupId, cluster) {
+      ParliamentService.dismissAllIssues(groupId, cluster.id)
+        .then((data) => {
+          if (cluster.issues) {
+            for (const issue of cluster.issues) {
+              issue.dismissed = data.dismissed;
+            }
+          }
+        })
+        .catch((error) => {
+          this.error = error.text || 'Unable to dismiss all of the issues in this cluster';
+        });
     },
     getIssueTrackingId: function (issue, index) {
       if (issue.node) {
@@ -727,9 +929,20 @@ export default {
         </small>`;
       return htmlStr;
     },
-    issueChange: function (change) {
-      // TODO
-      console.log('issue changed', change);
+    issueChange: function (changeEvent) {
+      // find the cluster to display/hide error
+      let cluster = this.getCluster(changeEvent.groupId, changeEvent.clusterId);
+
+      if (!cluster && !changeEvent.success) {
+        this.error = changeEvent.message;
+        return;
+      }
+
+      if (changeEvent.success) {
+        cluster.error = '';
+      } else {
+        cluster.error = changeEvent.message;
+      }
     },
     /* helper functions ---------------------------------------------------- */
     loadData: function () {
@@ -772,8 +985,6 @@ export default {
         newGroup.newTitle = oldGroup.newTitle;
         newGroup.newDescription = oldGroup.newDescription;
         newGroup.filteredClusters = oldGroup.filteredClusters;
-        newGroup.showEditGroupForm = oldGroup.showEditGroupForm;
-        newGroup.showNewClusterForm = oldGroup.showNewClusterForm;
         newGroup.newClusterTitle = oldGroup.newClusterTitle;
         newGroup.newClusterDescription = oldGroup.newClusterDescription;
         newGroup.newClusterUrl = oldGroup.newClusterUrl;
@@ -792,7 +1003,6 @@ export default {
           newCluster.newLocalUrl = oldCluster.newLocalUrl;
           newCluster.newMultiviewer = oldCluster.newMultiviewer;
           newCluster.newDisabled = oldCluster.newDisabled;
-          newCluster.showEditClusterForm = oldCluster.showEditClusterForm;
         }
       }
 
@@ -805,8 +1015,6 @@ export default {
         group.newTitle = undefined;
         group.newDescription = undefined;
         group.filteredClusters = undefined;
-        group.showEditGroupForm = undefined;
-        group.showNewClusterForm = undefined;
         group.newClusterTitle = undefined;
         group.newClusterDescription = undefined;
         group.newClusterUrl = undefined;
@@ -823,7 +1031,6 @@ export default {
           cluster.newLocalUrl = undefined;
           cluster.newMultiviewer = undefined;
           cluster.newDisabled = undefined;
-          cluster.showEditClusterForm = undefined;
         }
       }
     },
@@ -845,6 +1052,18 @@ export default {
 
         this.numFilteredClusters += group.filteredClusters.length;
       }
+    },
+    getCluster: function (groupId, clusterId) {
+      for (const group of this.parliament.groups) {
+        if (group.id === groupId) {
+          for (const c of group.clusters) {
+            if (c.id === clusterId) {
+              return c;
+            }
+          }
+        }
+      }
+      return undefined;
     }
   }
 };
