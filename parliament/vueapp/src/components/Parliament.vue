@@ -469,7 +469,7 @@
               <small v-if="cluster.activeIssues">
                 <template v-if="showMoreIssuesFor.indexOf(cluster.id) > -1">
                   <div v-for="(issue, index) in cluster.activeIssues"
-                    :key="getIssueTrackingId(issue, index)">
+                    :key="getIssueTrackingId(issue)">
                     <issue :issue="issue"
                       :group-id="group.id"
                       :cluster-id="cluster.id"
@@ -487,7 +487,7 @@
                 </template>
                 <template v-else>
                   <div v-for="(issue, index) in cluster.activeIssues.slice(0, 4)"
-                    :key="getIssueTrackingId(issue, index)">
+                    :key="getIssueTrackingId(issue)">
                     <issue :issue="issue"
                       :group-id="group.id"
                       :cluster-id="cluster.id"
@@ -918,7 +918,7 @@ export default {
           this.error = error.text || 'Unable to dismiss all of the issues in this cluster';
         });
     },
-    getIssueTrackingId: function (issue, index) {
+    getIssueTrackingId: function (issue) {
       if (issue.node) {
         return `${issue.node.replace(/\s/g, '')}-${issue.type}`;
       } else {
@@ -952,8 +952,8 @@ export default {
         })
         .catch((error) => {
           this.error = error.text ||
-            `Error fetching health and status information about Molochs in your parliament.
-             The information displayed below is likely out of date`;
+            `Error fetching information about Molochs in your parliament.
+             The information displayed below is likely out of date.`;
         });
     },
     startAutoRefresh: function () {

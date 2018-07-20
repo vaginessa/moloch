@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import Parliamnet from '@/components/Parliament';
+import Parliament from '@/components/Parliament';
+import Issues from '@/components/Issues';
 
 Vue.use(Router);
 
@@ -9,9 +10,14 @@ export default new Router({
   base: '/parliament/',
   routes: [
     {
-      path: '/',
-      name: 'Parliamnet',
-      component: Parliamnet
+      path: '',
+      name: 'Parliament',
+      component: Parliament
+    },
+    {
+      path: '/issues',
+      name: 'Issues',
+      component: Issues
     }
   ]
 });

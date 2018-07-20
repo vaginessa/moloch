@@ -23,6 +23,12 @@ export default function setup () {
       if (error.response && !error.response.success && error.response.data.tokenError) {
         // Token was not sent or was rejected, log out the user in the UI
         AuthService.logout();
+      } else if (!error.response) {
+        error.response = {
+          data: {
+            text: error.message || 'Cannot connect to server'
+          }
+        };
       }
 
       reject(error);

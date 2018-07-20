@@ -151,7 +151,9 @@ app.disable('x-powered-by');
 
 // TODO
 // vue index page
-app.use(['/parliament','/parliament/'], express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
+app.use('/parliament', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
+app.use('/parliament/', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
+app.use('/parliament/issues', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
 // expose vue bundles (prod)
 app.use('/static', express.static(`${__dirname}/vueapp/dist/static`));
 // expose vue bundle (dev)
