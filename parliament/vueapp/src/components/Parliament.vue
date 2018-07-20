@@ -116,7 +116,7 @@
       <div class="text-muted">
         <span class="fa fa-3x fa-folder-open text-muted-more">
         </span>
-        No groups in your cluster.
+        No groups in your parliament.
         <a v-if="loggedIn"
           @click="showNewGroupForm = true"
           class="cursor-pointer no-href no-decoration">
@@ -642,7 +642,7 @@ export default {
       error: '',
       initialized: false,
       // page data
-      parliament: { },
+      parliament: {},
       groupBeingEdited: undefined,
       groupAddingCluster: undefined,
       clusterBeingEdited: undefined,
