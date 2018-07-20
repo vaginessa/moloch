@@ -466,27 +466,43 @@
                 </div>
               </small> <!-- /cluster stats -->
               <!-- cluster issues -->
-              <small v-if="cluster.issues">
-                <span v-for="(issue, index) in cluster.issues"
-                  :key="getIssueTrackingId(issue, index)">
-                  <div v-if="!issue.dismissed && !issue.ignoreUntil"
-                    class="alert alert-sm"
-                    :class="{'alert-warning':issue.severity==='yellow','alert-danger':issue.severity==='red'}">
-                    <issue-actions v-if="loggedIn"
-                      class="issue-btns"
-                      :issue="issue"
-                      :groupId="group.id"
-                      :clusterId="cluster.id"
+              <small v-if="cluster.activeIssues">
+                <template v-if="showMoreIssuesFor.indexOf(cluster.id) > -1">
+                  <div v-for="(issue, index) in cluster.activeIssues"
+                    :key="getIssueTrackingId(issue, index)">
+                    <issue :issue="issue"
+                      :group-id="group.id"
+                      :cluster-id="cluster.id"
+                      :logged-in="loggedIn"
+                      :index="index"
                       @issueChange="issueChange">
-                    </issue-actions>
-                    {{ issue.message }}
-                    <br>
-                    <small class="cursor-help issue-date"
-                      v-b-tooltip.hover.top-left.html="issueDateTooltip(issue)">
-                      {{ issue.lastNoticed | moment('MM/DD HH:mm:ss') }}
-                    </small>
+                    </issue>
                   </div>
-                </span>
+                  <a v-if="cluster.activeIssues.length > 5"
+                    href="javascript:void(0)"
+                    class="no-decoration"
+                    @click="showLessIssues(cluster)">
+                    show less issues...
+                  </a>
+                </template>
+                <template v-else>
+                  <div v-for="(issue, index) in cluster.activeIssues.slice(0, 4)"
+                    :key="getIssueTrackingId(issue, index)">
+                    <issue :issue="issue"
+                      :group-id="group.id"
+                      :cluster-id="cluster.id"
+                      :logged-in="loggedIn"
+                      :index="index"
+                      @issueChange="issueChange">
+                    </issue>
+                  </div>
+                  <a v-if="cluster.activeIssues.length > 5"
+                    href="javascript:void(0)"
+                    class="no-decoration"
+                    @click="showMoreIssues(cluster)">
+                    show more issues...
+                  </a>
+                </template>
               </small> <!-- /cluster issues -->
               <!-- edit cluster form -->
               <div v-if="loggedIn && cluster.id === clusterBeingEdited"
@@ -626,7 +642,7 @@
 
 <script>
 import ParliamentService from './parliament.service';
-import IssueActions from './IssueActions';
+import Issue from './Issue';
 
 let timeout;
 let interval;
@@ -634,7 +650,7 @@ let interval;
 export default {
   name: 'Parliament',
   components: {
-    IssueActions
+    Issue
   },
   data: function () {
     return {
@@ -646,6 +662,7 @@ export default {
       groupBeingEdited: undefined,
       groupAddingCluster: undefined,
       clusterBeingEdited: undefined,
+      showMoreIssuesFor: [],
       // old parliament order to undo reordering
       oldParliamentOrder: {},
       // search vars
@@ -885,14 +902,17 @@ export default {
           group.error = error.text || 'Unable to remove cluster from this group';
         });
     },
+    showMoreIssues: function (cluster) {
+      this.showMoreIssuesFor.push(cluster.id);
+    },
+    showLessIssues: function (cluster) {
+      let i = this.showMoreIssuesFor.indexOf(cluster.id);
+      if (i > -1) { this.showMoreIssuesFor.splice(i, 1); }
+    },
     dismissAllIssues: function (groupId, cluster) {
       ParliamentService.dismissAllIssues(groupId, cluster.id)
         .then((data) => {
-          if (cluster.issues) {
-            for (const issue of cluster.issues) {
-              issue.dismissed = data.dismissed;
-            }
-          }
+          cluster.activeIssues = [];
         })
         .catch((error) => {
           this.error = error.text || 'Unable to dismiss all of the issues in this cluster';
@@ -905,30 +925,6 @@ export default {
         return issue.type;
       }
     },
-    issueDateTooltip: function (issue) {
-      let firstNoticed = this.$options.filters.moment(issue.firstNoticed, 'YYYY/MM/DD HH:mm:ss');
-      let lastNoticed = this.$options.filters.moment(issue.lastNoticed, 'YYYY/MM/DD HH:mm:ss');
-      let htmlStr =
-        `<small>
-          <div>
-            <strong>Last</strong>
-            noticed at:
-            <br>
-            <strong>
-              ${lastNoticed}
-            </strong>
-          </div>
-          <div>
-            <strong>First</strong>
-            noticed at:
-            <br>
-            <strong>
-              ${firstNoticed}
-            </strong>
-          </div>
-        </small>`;
-      return htmlStr;
-    },
     issueChange: function (changeEvent) {
       // find the cluster to display/hide error
       let cluster = this.getCluster(changeEvent.groupId, changeEvent.clusterId);
@@ -940,6 +936,7 @@ export default {
 
       if (changeEvent.success) {
         cluster.error = '';
+        cluster.activeIssues.splice(changeEvent.index, 1);
       } else {
         cluster.error = changeEvent.message;
       }
@@ -1094,17 +1091,6 @@ export default {
 }
 .cluster-group .card .card-footer {
   padding: 0.2rem 0.5rem;
-}
-
-.cluster-group .card .alert .issue-btns {
-  margin-top: -3px;
-  display: inline-block;
-  float: right;
-}
-
-.cluster-group .card .alert .issue-date {
-  color: #676767;
-  font-style: italic;
 }
 
 /* compact form for editing clusters */

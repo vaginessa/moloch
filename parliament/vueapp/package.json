@@ -5,8 +5,8 @@
   "author": "31453 <elyse.rinne@teamaol.com>",
   "private": true,
   "scripts": {
-    "dev": "node ../parliament.js --pass admin --port 8080 -c ../parliament.dev.json & webpack -d --watch --progress --hide-modules --display-error-details --config build/webpack.dev.conf.js",
-    "dev:noauth": "node ../parliament.js --port 8080 -c ../parliament.dev.json & webpack -d --watch --progress --hide-modules --display-error-details --config build/webpack.dev.conf.js",
+    "dev": "node ../parliament.js --pass admin --port 8080 -c ./parliament.dev.json & webpack -d --watch --progress --hide-modules --display-error-details --config build/webpack.dev.conf.js",
+    "dev:noauth": "node ../parliament.js --port 8080 -c ./parliament.dev.json & webpack -d --watch --progress --hide-modules --display-error-details --config build/webpack.dev.conf.js",
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue src",
     "build": "node build/build.js"

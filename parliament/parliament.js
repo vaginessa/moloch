@@ -827,8 +827,21 @@ router.put('/settings', verifyToken, (req, res, next) => {
 // Get parliament with stats
 router.get('/parliament', (req, res, next) => {
   let parliamentClone = JSON.parse(JSON.stringify(parliament));
+
+  for (const group of parliamentClone.groups) {
+    for (let cluster of group.clusters) {
+      cluster.activeIssues = [];
+      for (const issue of cluster.issues) {
+        if (!issue.dismissed && !issue.ignoreUntil) {
+          cluster.activeIssues.push(issue);
+        }
+      }
+    }
+  }
+
   delete parliamentClone.settings
   delete parliamentClone.password
+
   return res.json(parliamentClone);
 });
 
