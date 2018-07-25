@@ -13,20 +13,22 @@
         <li class="nav-item mr-2">
           <router-link to="/"
             active-class="active"
-            class="nav-link">
+            class="nav-link"
+            exact>
             Parliament
           </router-link>
         </li>
         <li class="nav-item mr-2">
-          <router-link to="/issues"
+          <router-link to="issues"
             active-class="active"
-            class="nav-link">
+            class="nav-link"
+            exact>
             Issues
           </router-link>
         </li>
         <li class="nav-item mr-2"
           v-if="(hasAuth && loggedIn) || !hasAuth">
-          <router-link to="/settings"
+          <router-link to="settings"
             active-class="active"
             class="nav-link">
             Settings

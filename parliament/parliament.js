@@ -24,6 +24,8 @@ const router  = express.Router();
 
 const version = 1;
 
+const saltrounds = 13;
+
 const issueTypes = {
   esRed: { on: true, name: 'ES Red', text: 'ES is red', severity: 'red', description: 'ES status is red' },
   esDown: { on: true, name: 'ES Down', text:' ES is down', severity: 'red', description: 'ES is unreachable' },
@@ -66,7 +68,7 @@ const issueTypes = {
         break;
 
       case '--pass':
-        bcrypt.hash(appArgs[i+1], 10, setPasswordHash);
+        bcrypt.hash(appArgs[i+1], saltrounds, setPasswordHash);
         i++;
         break;
 
@@ -149,33 +151,18 @@ let timeout;
 
 app.disable('x-powered-by');
 
-// TODO
-// vue index page
-app.use('/parliament', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
-app.use('/parliament/', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
-app.use('/parliament/issues', express.static(`${__dirname}/vueapp/dist/index.html`, { maxAge:600*1000 }));
 // expose vue bundles (prod)
 app.use('/static', express.static(`${__dirname}/vueapp/dist/static`));
 // expose vue bundle (dev)
 app.use(['/app.js', '/vueapp/app.js'], express.static(`${__dirname}/vueapp/dist/app.js`));
-// TODO
-app.use('/parliament/font-awesome', express.static(__dirname + '/../node_modules/font-awesome', { maxAge: 600 * 1000}));
 
-// TODO parliament app pages
-app.use('/angularparliament', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
-app.use('/angularparliament/issues', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
-app.use('/angularparliament/settings', express.static(`${__dirname}/dist/index.html`, { maxAge:600*1000 }));
+app.use('/parliament/font-awesome', express.static(__dirname + '/../node_modules/font-awesome', { maxAge: 600 * 1000}));
 
 // log requests
 app.use(logger('dev'));
 
 app.use(favicon(`${__dirname}/favicon.ico`));
 
-// TODO serve public files
-app.use('/angularparliament/public', express.static(`${__dirname}/public`, { maxAge:600*1000 }));
-
-// TODO serve app bundles
-app.use('/angularparliament', express.static(path.join(__dirname, 'dist')));
 
 // define router to mount api related functions
 app.use('/parliament/api', router);
@@ -225,11 +212,6 @@ app.use((err, req, res, next) => {
     success : false,
     text    : err.message || 'Error'
   });
-});
-
-// 404 page
-app.use((req, res, next) => {
-  res.status(404).sendFile(`${__dirname}/dist/404.html`);
 });
 
 // Verify token
@@ -620,7 +602,15 @@ function updateParliament() {
     Promise.all(promises)
       .then(() => {
         // save the data created after updating the parliament
-        fs.writeFile(app.get('file'), JSON.stringify(parliament, null, 2), 'utf8');
+        fs.writeFile(app.get('file'), JSON.stringify(parliament, null, 2), 'utf8',
+          (err) => {
+            if (err) {
+              console.error('Parliament update error:', err.message || err);
+              return reject();
+            }
+
+            return resolve();
+          });
         return resolve();
       })
       .catch((error) => {
@@ -728,7 +718,7 @@ router.put('/auth/update', (req, res, next) => {
     }
   }
 
-  bcrypt.hash(req.body.newPassword, 10, (err, hash) => {
+  bcrypt.hash(req.body.newPassword, saltrounds, (err, hash) => {
     if (err) {
       console.error(`Error hashing password: ${err}`);
       const error = new Error('Hashing password failed.');
@@ -1260,6 +1250,11 @@ process.on('SIGINT', function() {
 });
 
 /* LISTEN! ----------------------------------------------------------------- */
+// vue index page
+app.use((req, res, next) => {
+  res.status(404).sendFile(`${__dirname}/vueapp/dist/index.html`);
+});
+
 let server;
 if (app.get('keyFile') && app.get('certFile')) {
   const certOptions = {

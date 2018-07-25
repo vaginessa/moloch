@@ -51,11 +51,12 @@ export default {
 
   updatePassword: function (currentPassword, newPassword) {
     return new Promise((resolve, reject) => {
-      Vue.axios.get('api/auth/update', {
+      Vue.axios.put('api/auth/update', {
         newPassword: newPassword,
         currentPassword: currentPassword
       })
         .then((response) => {
+          store.commit('setHasAuth', true);
           this.saveToken(response.data.token);
           resolve(response.data);
         })
