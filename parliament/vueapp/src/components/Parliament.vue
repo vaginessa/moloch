@@ -1000,6 +1000,7 @@ export default {
           newCluster.newLocalUrl = oldCluster.newLocalUrl;
           newCluster.newMultiviewer = oldCluster.newMultiviewer;
           newCluster.newDisabled = oldCluster.newDisabled;
+          newCluster.activeIssues = oldCluster.activeIssues;
         }
       }
 

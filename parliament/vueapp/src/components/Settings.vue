@@ -276,6 +276,8 @@
 import AuthService from '../auth';
 import SettingsService from './settings.service';
 
+let initialized;
+
 export default {
   name: 'Settings',
   data: function () {
@@ -307,13 +309,13 @@ export default {
   },
   watch: {
     loggedIn: function (newVal) {
-      if (newVal) { this.loadData(); }
+      if (newVal && initialized) { this.loadData(); }
     }
   },
   mounted: function () {
     // does the url specify a tab in hash
     let tab = window.location.hash;
-    if (tab && this.hasAuth) { // if there is a tab specified and it's a valid tab
+    if (tab) { // if there is a tab specified and it's a valid tab
       tab = tab.replace(/^#/, '');
       if (tab === 'alerts' || tab === 'notifiers' || tab === 'password') {
         this.visibleTab = tab;
@@ -349,7 +351,7 @@ export default {
         .then((data) => {
           this.error = '';
           this.success = data.text || 'Successfully issued alert.';
-          this.closeSuccess(); // TODO close automagically
+          this.closeSuccess();
         })
         .catch((error) => {
           this.error = error.text || 'Error issuing alert.';
@@ -419,15 +421,18 @@ export default {
     loadData: function () {
       SettingsService.getSettings()
         .then((data) => {
+          initialized = true;
           this.error = '';
           this.settings = data;
         })
         .catch((error) => {
+          initialized = true;
           if (this.hasAuth) {
             this.error = error.text || 'Error fetching settings.';
           } else {
             this.error = 'No password set for your Parliament. Please set a password so you can do more stuff!';
           }
+          this.openView('password'); // redirect the user to possibly create a password
         });
     },
     closeSuccess: function (time) {
