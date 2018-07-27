@@ -151,6 +151,7 @@ export default {
   mounted: function () {
     AuthService.hasAuth();
     AuthService.isLoggedIn();
+    this.loadRefreshInterval();
   },
   methods: {
     /* page functions -------------------------------------------------------- */
@@ -186,6 +187,9 @@ export default {
     clearLogin: function () {
       this.password = '';
       this.showLoginInput = false;
+    },
+    loadRefreshInterval: function () {
+      this.refreshInterval = localStorage.getItem('refreshInterval') || 15000;
     }
   }
 };
