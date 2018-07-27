@@ -85,7 +85,7 @@ export default {
     });
   },
 
-  updateClusterOrder: function (reorderedParliament) {
+  updateParliamentOrder: function (reorderedParliament) {
     return new Promise((resolve, reject) => {
       Vue.axios.put(`api/parliament`, { reorderedParliament: reorderedParliament })
         .then((response) => {
