@@ -151,7 +151,7 @@ try {
 // construct the issues file name
 let issuesFilename = 'issues.json';
 if (app.get('file').indexOf('.json') > -1) {
-  let name = app.get('file').replace(/\.json/g,'');
+  let name = app.get('file').replace(/\.json/g, '');
   issuesFilename = `${name}.issues.json`;
 }
 app.set('issuesfile', issuesFilename);
@@ -350,7 +350,7 @@ function setIssue (cluster, newIssue) {
 
   // don't duplicate existing issues, update them
   for (let issue of issues) {
-    if (issue.clusterId == newIssue.clusterId &&
+    if (issue.clusterId === newIssue.clusterId &&
         issue.type === newIssue.type &&
         issue.node === newIssue.node) {
       existingIssue = true;
