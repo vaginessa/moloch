@@ -148,6 +148,22 @@ try {
   };
 }
 
+// construct the issues file name
+let issuesFilename = 'issues.json';
+if (app.get('file').indexOf('.json') > -1) {
+  let name = app.get('file').replace(/\.json/g,'');
+  issuesFilename = `${name}.issues.json`;
+}
+app.set('issuesfile', issuesFilename);
+
+// get the issues file or create it if it doesn't exist
+let issues;
+try {
+  issues = require(issuesFilename);
+} catch (err) {
+  issues = [];
+}
+
 // define ids for groups and clusters
 let groupId = 0;
 let clusterId = 0;
@@ -309,37 +325,35 @@ function issueAlert (cluster, issue) {
 }
 
 // Finds an issue in a cluster
-function findIssue (groupId, clusterId, issueType, node) {
-  for (let group of parliament.groups) {
-    if (group.id === groupId) {
-      for (let cluster of group.clusters) {
-        if (cluster.id === clusterId) {
-          if (cluster.issues) {
-            for (let issue of cluster.issues) {
-              if (issue.type === issueType && issue.node === node) {
-                return issue;
-              }
-            }
-          }
-        }
-      }
+function findIssue (clusterId, issueType, node) {
+  for (let issue of issues) {
+    if (issue.clusterId === clusterId &&
+      issue.type === issueType &&
+      issue.node === node) {
+      return issue;
     }
   }
 }
 
 // Updates an existing issue or pushes a new issue onto the issue array
 function setIssue (cluster, newIssue) {
-  if (!cluster.issues) { cluster.issues = []; }
-
   // build issue
-  let issueType     = issueTypes[newIssue.type];
-  newIssue.text     = issueType.text;
-  newIssue.title    = issueType.name;
-  newIssue.severity = issueType.severity;
-  newIssue.message  = formatIssueMessage(cluster, newIssue);
+  let issueType       = issueTypes[newIssue.type];
+  newIssue.text       = issueType.text;
+  newIssue.title      = issueType.name;
+  newIssue.severity   = issueType.severity;
+  newIssue.clusterId  = cluster.id;
+  newIssue.cluster    = cluster.title;
+  newIssue.message    = formatIssueMessage(cluster, newIssue);
 
-  for (let issue of cluster.issues) {
-    if (issue.type === newIssue.type && issue.node === newIssue.node) {
+  let existingIssue = false;
+
+  // don't duplicate existing issues, update them
+  for (let issue of issues) {
+    if (issue.clusterId == newIssue.clusterId &&
+        issue.type === newIssue.type &&
+        issue.node === newIssue.node) {
+      existingIssue = true;
       if (Date.now() > issue.ignoreUntil && issue.ignoreUntil !== -1) {
         // the ignore has expired, so alert!
         issue.ignoreUntil = undefined;
@@ -351,15 +365,22 @@ function setIssue (cluster, newIssue) {
       if (!issue.dismissed && !issue.ignoreUntil && !issue.alerted) {
         issueAlert(cluster, issue);
       }
-
-      return;
     }
   }
 
-  newIssue.firstNoticed = Date.now();
-  cluster.issues.push(newIssue);
+  if (!existingIssue) {
+    newIssue.firstNoticed = Date.now();
+    issues.push(newIssue);
+    issueAlert(cluster, newIssue);
+  }
 
-  issueAlert(cluster, cluster.issues[cluster.issues.length - 1]);
+  fs.writeFile(app.get('issuesfile'), JSON.stringify(issues, null, 2), 'utf8',
+    (err) => {
+      if (err) {
+        console.error('Unable to write issue:', err.message || err);
+      }
+    }
+  );
 }
 
 // Retrieves the health of each cluster and updates the cluster with that info
@@ -589,20 +610,25 @@ function updateParliament () {
     }
 
     // remove dismissed issues that have not been seen again for 1 day
-    for (let group of parliament.groups) {
-      for (let cluster of group.clusters) {
-        if (cluster.issues) {
-          for (const [index, issue] of cluster.issues.entries()) {
-            if (issue.dismissed && (Date.now() - issue.lastNoticed > 86400000)) {
-              cluster.issues.splice(index, 1);
-            }
-          }
-        }
+    let issuesRemoved = false;
+    for (const [issue, index] of issues.entries()) {
+      if (issue.dismissed && (Date.now() - issue.lastNoticed > 86400000)) {
+        issuesRemoved = true;
+        issues.splice(index, 1);
       }
     }
 
     Promise.all(promises)
       .then(() => {
+        if (issuesRemoved) { // save the issues that were removed
+          fs.writeFile(app.get('issuesfile'), JSON.stringify(issues, null, 2), 'utf8',
+            (err) => {
+              if (err) {
+                console.error('Unable to write issue:', err.message || err);
+              }
+            }
+          );
+        }
         // save the data created after updating the parliament
         fs.writeFile(app.get('file'), JSON.stringify(parliament, null, 2), 'utf8',
           (err) => {
@@ -846,9 +872,9 @@ router.get('/parliament', (req, res, next) => {
   for (const group of parliamentClone.groups) {
     for (let cluster of group.clusters) {
       cluster.activeIssues = [];
-      if (!cluster.issues) { continue; }
-      for (const issue of cluster.issues) {
-        if (!issue.dismissed && !issue.ignoreUntil) {
+      for (let issue of issues) {
+        if (issue.clusterId === cluster.id &&
+          !issue.dismissed && !issue.ignoreUntil) {
           cluster.activeIssues.push(issue);
         }
       }
@@ -873,6 +899,7 @@ router.put('/parliament', verifyToken, (req, res, next) => {
   for (const group of req.body.reorderedParliament.groups) {
     group.filteredClusters = undefined;
     for (const cluster of group.clusters) {
+      cluster.issues = undefined;
       cluster.activeIssues = undefined;
     }
   }
@@ -1086,23 +1113,7 @@ router.put('/groups/:groupId/clusters/:clusterId', verifyToken, (req, res, next)
 
 // Get a list of issues
 router.get('/issues', (req, res, next) => {
-  let issues = [];
-
-  for (let group of parliament.groups) {
-    for (let cluster of group.clusters) {
-      if (cluster.issues) {
-        for (let issue of cluster.issues) {
-          if (issue && !issue.dismissed) {
-            let issueClone = JSON.parse(JSON.stringify(issue));
-            issueClone.groupId    = group.id;
-            issueClone.clusterId  = cluster.id;
-            issueClone.cluster    = cluster.title;
-            issues.push(issueClone);
-          }
-        }
-      }
-    }
-  }
+  let issuesClone = JSON.parse(JSON.stringify(issues));
 
   let type = 'string';
   let sortBy = req.query.sort;
@@ -1112,7 +1123,7 @@ router.get('/issues', (req, res, next) => {
 
   if (sortBy) {
     let order = req.query.order || 'desc';
-    issues.sort((a, b) => {
+    issuesClone.sort((a, b) => {
       if (type === 'string') {
         let aVal = '';
         let bVal = '';
@@ -1133,7 +1144,7 @@ router.get('/issues', (req, res, next) => {
     });
   }
 
-  return res.json({ issues:issues });
+  return res.json({ issues: issuesClone });
 });
 
 // Dismiss an issue with a cluster
@@ -1147,7 +1158,7 @@ router.put('/groups/:groupId/clusters/:clusterId/dismissIssue', verifyToken, (re
 
   let now = Date.now();
 
-  let issue = findIssue(parseInt(req.params.groupId), parseInt(req.params.clusterId), req.body.type, req.body.node);
+  let issue = findIssue(parseInt(req.params.clusterId), req.body.type, req.body.node);
 
   if (!issue) {
     const error = new Error('Unable to find issue to dismiss.');
@@ -1176,7 +1187,7 @@ router.put('/groups/:groupId/clusters/:clusterId/ignoreIssue', verifyToken, (req
   let ignoreUntil = Date.now() + ms;
   if (ms === -1) { ignoreUntil = -1; } // -1 means ignore it forever
 
-  let issue = findIssue(parseInt(req.params.groupId), parseInt(req.params.clusterId), req.body.type, req.body.node);
+  let issue = findIssue(parseInt(req.params.clusterId), req.body.type, req.body.node);
 
   if (!issue) {
     const error = new Error('Unable to find issue to ignore.');
@@ -1200,7 +1211,7 @@ router.put('/groups/:groupId/clusters/:clusterId/removeIgnoreIssue', verifyToken
     return next(error);
   }
 
-  let issue = findIssue(parseInt(req.params.groupId), parseInt(req.params.clusterId), req.body.type, req.body.node);
+  let issue = findIssue(parseInt(req.params.clusterId), req.body.type, req.body.node);
 
   if (!issue) {
     const error = new Error('Unable to find issue to remove the ignore.');
@@ -1221,20 +1232,10 @@ router.put('/groups/:groupId/clusters/:clusterId/dismissAllIssues', verifyToken,
   let now   = Date.now();
   let count = 0;
 
-  for (let group of parliament.groups) {
-    if (group.id === parseInt(req.params.groupId)) {
-      for (let cluster of group.clusters) {
-        if (cluster.id === parseInt(req.params.clusterId)) {
-          if (cluster.issues) {
-            for (let issue of cluster.issues) {
-              if (!issue.dismissed) {
-                issue.dismissed = now;
-                count++;
-              }
-            }
-          }
-        }
-      }
+  for (let issue of issues) {
+    if (issue.clusterId === parseInt(req.params.clusterId)) {
+      issue.dismissed = now;
+      count++;
     }
   }
 
